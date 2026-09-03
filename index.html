@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conectando con Mercado Libre</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1.5rem; color: #222; }
+  h1 { font-size: 1.4rem; }
+  code { display: block; word-break: break-all; background: #f3f3f3; padding: .8rem; border-radius: .4rem; margin: 1rem 0; font-size: .95rem; }
+  button { font-size: 1rem; padding: .6rem 1rem; border-radius: .4rem; border: 1px solid #999; background: #fff; cursor: pointer; }
+  .muted { color: #666; font-size: .9rem; }
+  #manual { display: none; }
+</style>
+</head>
+<body>
+<h1 id="title">Conectando con Mercado Libre…</h1>
+<p id="hint" class="muted">Un instante. Te estamos devolviendo a Claude.</p>
+
+<div id="manual">
+  <p>No pudimos avisarle a Claude automáticamente. No pasa nada: copiá este código y pegalo en la conversación con Claude.</p>
+  <code id="code"></code>
+  <button id="copy">Copiar código</button>
+  <p class="muted">También sirve copiar la dirección completa de esta página.</p>
+</div>
+
+<script>
+(function () {
+  // Esta página es la redirect URI registrada en Mercado Libre (tiene que ser
+  // HTTPS). Reenvía el navegador al receptor local que levantó el servidor MCP
+  // en la computadora del usuario. Si el receptor no responde en unos segundos,
+  // muestra el código para pegarlo a mano.
+  var LOCAL = 'http://127.0.0.1:8765/callback';
+  var params = new URLSearchParams(location.search);
+  var code = params.get('code');
+  var error = params.get('error');
+  var title = document.getElementById('title');
+  var hint = document.getElementById('hint');
+  var manual = document.getElementById('manual');
+
+  function showManual() {
+    title.textContent = 'Un paso más';
+    hint.style.display = 'none';
+    manual.style.display = 'block';
+    document.getElementById('code').textContent = code;
+  }
+
+  if (error || !code) {
+    title.textContent = 'Mercado Libre no autorizó la conexión';
+    hint.textContent = 'Motivo: ' + (error || 'no llegó el código') + '. Volvé a Claude e intentá de nuevo.';
+    return;
+  }
+
+  document.getElementById('copy').addEventListener('click', function () {
+    navigator.clipboard && navigator.clipboard.writeText(code);
+    this.textContent = 'Copiado';
+  });
+
+  // Si el receptor local no contesta, mostramos el código.
+  var fallback = setTimeout(showManual, 4000);
+  // Navegación de nivel superior de https a http://127.0.0.1: permitida por los navegadores.
+  location.replace(LOCAL + location.search);
+  // Si la navegación falla (nada escuchando), el timeout muestra el modo manual.
+  window.addEventListener('pagehide', function () { clearTimeout(fallback); });
+})();
+</script>
+</body>
+</html>
